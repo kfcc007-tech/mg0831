@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미국 주식 적정 가치 분석기</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#475569',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        /* Hide number input arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-md">
+        <div class="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold flex items-center gap-3">
+                <i class="ph-fill ph-chart-line-up text-4xl"></i>
+                미국 주식 적정 가치 분석기
+            </h1>
+            <p class="mt-2 text-blue-100 opacity-90">기업의 재무 데이터를 바탕으로 적정 주가를 직접 계산해 보세요.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full flex flex-col md:flex-row gap-6">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 flex-shrink-0">
+            <nav class="bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex flex-row md:flex-col gap-1 overflow-x-auto">
+                <button onclick="switchTab('guide')" id="nav-guide" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors bg-blue-50 text-blue-700 font-medium">
+                    <i class="ph ph-book-open text-xl"></i>
+                    <span class="whitespace-nowrap">가치평가 기초 가이드</span>
+                </button>
+                <button onclick="switchTab('graham')" id="nav-graham" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors hover:bg-slate-50 text-slate-600">
+                    <i class="ph ph-calculator text-xl"></i>
+                    <span class="whitespace-nowrap">그레이엄 수 계산기</span>
+                </button>
+                <button onclick="switchTab('dcf')" id="nav-dcf" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors hover:bg-slate-50 text-slate-600">
+                    <i class="ph ph-chart-bar text-xl"></i>
+                    <span class="whitespace-nowrap">단순 DCF 모델</span>
+                </button>
+                <button onclick="switchTab('per')" id="nav-per" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors hover:bg-slate-50 text-slate-600">
+                    <i class="ph ph-target text-xl"></i>
+                    <span class="whitespace-nowrap">목표 PER 가격</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <section class="flex-grow">
+            
+            <!-- 1. Guide Tab -->
+            <div id="tab-guide" class="tab-content active bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <i class="ph-fill ph-book-bookmark text-blue-600"></i> 미국 주식 가치평가 핵심 지표
+                </h2>
+                
+                <div class="space-y-6">
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">PER (Price Earning Ratio, 주가수익비율)</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-2">
+                            주가를 1주당 순이익(EPS)으로 나눈 값입니다. 기업이 벌어들이는 이익 대비 주가가 얼마나 고평가/저평가 되어 있는지 나타냅니다. S&P500 평균은 역사적으로 15~20배 사이입니다.
+                        </p>
+                        <p class="text-xs font-semibold text-blue-600">공식: 주가 ÷ EPS</p>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">PBR (Price Book-value Ratio, 주가순자산비율)</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-2">
+                            주가를 1주당 순자산(BPS)으로 나눈 값입니다. 회사를 청산했을 때 남는 가치 대비 주가의 수준을 보여줍니다. 일반적으로 1 미만이면 장부상 가치보다 주가가 낮다고 평가합니다 (가치주 기준).
+                        </p>
+                        <p class="text-xs font-semibold text-blue-600">공식: 주가 ÷ BPS</p>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">ROE (Return On Equity, 자기자본이익률)</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-2">
+                            기업이 가진 자본을 활용해 얼마나 이익을 냈는지 보여주는 수익성 지표입니다. 워런 버핏은 3년 이상 ROE가 15% 이상인 기업을 선호하는 것으로 알려져 있습니다.
+                        </p>
+                        <p class="text-xs font-semibold text-blue-600">공식: (당기순이익 ÷ 자기자본) × 100</p>
+                    </div>
+
+                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <h3 class="text-lg font-bold text-blue-800 mb-2 flex items-center gap-2">
+                            <i class="ph-fill ph-lightbulb text-yellow-500"></i> 투자 팁
+                        </h3>
+                        <p class="text-blue-700 text-sm leading-relaxed">
+                            어떤 하나의 지표만으로 주식의 가치를 완벽하게 평가할 수는 없습니다. 기업의 성장성, 산업의 미래, 거시 경제 상황을 함께 고려해야 하며, 좌측의 계산기들은 <strong>보조적인 참고 지표</strong>로 활용하시기 바랍니다. 야후 파이낸스(Yahoo Finance)나 시킹알파(Seeking Alpha)에서 미국 주식의 EPS, BPS 등의 데이터를 쉽게 찾을 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Graham Number Tab -->
+            <div id="tab-graham" class="tab-content bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <i class="ph-fill ph-calculator text-blue-600"></i> 벤저민 그레이엄 수 계산기
+                </h2>
+                <p class="text-slate-500 mb-6 text-sm">가치투자의 창시자 벤저민 그레이엄이 제안한 보수적인 방어적 투자자의 적정 주가 산출 공식입니다. (PER 15배, PBR 1.5배 기준)</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">EPS (주당 순이익, $)</label>
+                            <input type="number" id="graham-eps" oninput="calcGraham()" placeholder="예: 5.50" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">BPS (주당 순자산, $)</label>
+                            <input type="number" id="graham-bps" oninput="calcGraham()" placeholder="예: 45.00" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow">
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded text-sm text-slate-600 border border-slate-200">
+                            <strong>공식:</strong> √(22.5 × EPS × BPS)<br>
+                            <span class="text-xs text-slate-500">* EPS 또는 BPS가 마이너스(-)인 적자 기업에는 적용할 수 없습니다.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col justify-center items-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                        <span class="text-slate-500 font-medium mb-2">산출된 적정 주가</span>
+                        <div class="text-4xl font-bold text-blue-700 break-all text-center">
+                            <span id="graham-result">$0.00</span>
+                        </div>
+                        <div id="graham-error" class="text-red-500 text-sm mt-2 hidden">유효한 양의 숫자를 입력해주세요.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Simple DCF Tab -->
+            <div id="tab-dcf" class="tab-content bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <i class="ph-fill ph-chart-bar text-blue-600"></i> 단순 할인현금흐름(DCF) 모델
+                </h2>
+                <p class="text-slate-500 mb-6 text-sm">미래에 기업이 벌어들일 잉여현금흐름(FCF)을 예상하고, 이를 현재 가치로 할인하여 주가를 산출합니다. (향후 5년 추정 후 영구가치 합산)</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">주당 잉여현금흐름 (FCF Per Share, $)</label>
+                            <input type="number" id="dcf-fcf" oninput="calcDCF()" placeholder="예: 4.20" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">예상 연평균 성장률 (향후 5년, %)</label>
+                            <input type="number" id="dcf-growth" oninput="calcDCF()" placeholder="예: 10" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">할인율 (요구수익률, %)</label>
+                            <input type="number" id="dcf-discount" oninput="calcDCF()" placeholder="예: 9" value="9" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <p class="text-xs text-slate-500 mt-1">일반적으로 S&P500 투자 기대수익률인 8~10%를 사용합니다.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">영구 성장률 (%)</label>
+                            <input type="number" id="dcf-terminal" oninput="calcDCF()" placeholder="예: 2.5" value="2.5" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <p class="text-xs text-slate-500 mt-1">물가상승률 수준인 2~3%를 주로 사용합니다. (할인율보다 낮아야 합니다)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col">
+                        <div class="flex-grow flex flex-col justify-center items-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                            <span class="text-slate-500 font-medium mb-2">DCF 적정 주가</span>
+                            <div class="text-4xl font-bold text-green-700 break-all text-center">
+                                <span id="dcf-result">$0.00</span>
+                            </div>
+                            <div id="dcf-error" class="text-red-500 text-sm mt-2 hidden text-center">할인율이 영구 성장률보다 커야 하며, 유효한 값을 입력해야 합니다.</div>
+                        </div>
+                        <div class="mt-4 text-xs text-slate-500 bg-slate-50 p-3 rounded border border-slate-200">
+                            * 본 계산기는 5년 예측 후 영구 성장 모델(Gordon Growth Model)을 결합한 단순화된 버전입니다. 예측치(성장률, 할인율)에 따라 결괏값이 매우 크게 변동할 수 있으므로 보수적으로 접근하세요.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Target PER Tab -->
+            <div id="tab-per" class="tab-content bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <i class="ph-fill ph-target text-blue-600"></i> 목표 PER 기반 적정 주가
+                </h2>
+                <p class="text-slate-500 mb-6 text-sm">월가 애널리스트들의 내년 예상 실적(Forward EPS)과 기업의 역사적 평균 PER 또는 산업 평균 PER을 곱하여 목표 주가를 산출합니다.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">미래 예상 EPS ($)</label>
+                            <input type="number" id="per-eps" oninput="calcPER()" placeholder="예: 6.50" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <p class="text-xs text-slate-500 mt-1">1년 후 예상 주당순이익(Forward EPS)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">목표 PER (배)</label>
+                            <input type="number" id="per-multiple" oninput="calcPER()" placeholder="예: 20" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <p class="text-xs text-slate-500 mt-1">과거 5년 평균 PER이나 산업 평균 PER을 입력하세요.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col justify-center items-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                        <span class="text-slate-500 font-medium mb-2">목표 주가</span>
+                        <div class="text-4xl font-bold text-purple-700 break-all text-center">
+                            <span id="per-result">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-slate-500 text-sm mt-auto">
+        <p>본 페이지의 계산 결과는 투자 참고용이며, 실제 투자 수익을 보장하지 않습니다.</p>
+        <p class="mt-1">모든 투자의 책임은 투자자 본인에게 있습니다.</p>
+    </footer>
+
+    <script>
+        // Formats a number to USD currency string
+        const formatUSD = (num) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+        };
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Reset nav styles
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-blue-50', 'text-blue-700', 'font-medium');
+                el.classList.add('hover:bg-slate-50', 'text-slate-600');
+            });
+
+            // Show selected tab
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            // Style selected nav
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            activeNav.classList.remove('hover:bg-slate-50', 'text-slate-600');
+            activeNav.classList.add('bg-blue-50', 'text-blue-700', 'font-medium');
+        }
+
+        // 1. Graham Number Calculation
+        function calcGraham() {
+            const epsStr = document.getElementById('graham-eps').value;
+            const bpsStr = document.getElementById('graham-bps').value;
+            const resultEl = document.getElementById('graham-result');
+            const errorEl = document.getElementById('graham-error');
+
+            if (epsStr === '' || bpsStr === '') {
+                resultEl.innerText = '$0.00';
+                errorEl.classList.add('hidden');
+                return;
+            }
+
+            const eps = parseFloat(epsStr);
+            const bps = parseFloat(bpsStr);
+
+            if (eps <= 0 || bps <= 0) {
+                resultEl.innerText = '계산 불가';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            errorEl.classList.add('hidden');
+            const grahamNumber = Math.sqrt(22.5 * eps * bps);
+            resultEl.innerText = formatUSD(grahamNumber);
+        }
+
+        // 2. Simple DCF Calculation
+        function calcDCF() {
+            const fcfStr = document.getElementById('dcf-fcf').value;
+            const growthStr = document.getElementById('dcf-growth').value;
+            const discountStr = document.getElementById('dcf-discount').value;
+            const terminalStr = document.getElementById('dcf-terminal').value;
+            
+            const resultEl = document.getElementById('dcf-result');
+            const errorEl = document.getElementById('dcf-error');
+
+            if (!fcfStr || !growthStr || !discountStr || !terminalStr) {
+                resultEl.innerText = '$0.00';
+                errorEl.classList.add('hidden');
+                return;
+            }
+
+            const fcf = parseFloat(fcfStr);
+            const g = parseFloat(growthStr) / 100;
+            const r = parseFloat(discountStr) / 100;
+            const tg = parseFloat(terminalStr) / 100;
+
+            if (r <= tg || isNaN(fcf) || fcf <= 0) {
+                resultEl.innerText = '계산 오류';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            errorEl.classList.add('hidden');
+
+            let presentValueSum = 0;
+            let currentFcf = fcf;
+
+            // Calculate PV of FCF for year 1 to 5
+            for (let i = 1; i <= 5; i++) {
+                currentFcf = currentFcf * (1 + g);
+                presentValueSum += currentFcf / Math.pow(1 + r, i);
+            }
+
+            // Calculate Terminal Value at year 5
+            // TV = FCF_5 * (1 + tg) / (r - tg)
+            const terminalValue = (currentFcf * (1 + tg)) / (r - tg);
+            
+            // Discount Terminal Value to present
+            const presentTerminalValue = terminalValue / Math.pow(1 + r, 5);
+
+            const intrinsicValue = presentValueSum + presentTerminalValue;
+            resultEl.innerText = formatUSD(intrinsicValue);
+        }
+
+        // 3. Target PER Calculation
+        function calcPER() {
+            const epsStr = document.getElementById('per-eps').value;
+            const multipleStr = document.getElementById('per-multiple').value;
+            const resultEl = document.getElementById('per-result');
+
+            if (!epsStr || !multipleStr) {
+                resultEl.innerText = '$0.00';
+                return;
+            }
+
+            const eps = parseFloat(epsStr);
+            const multiple = parseFloat(multipleStr);
+
+            if (eps > 0 && multiple > 0) {
+                resultEl.innerText = formatUSD(eps * multiple);
+            } else {
+                resultEl.innerText = '계산 불가';
+            }
+        }
+    </script>
+</body>
+</html>
